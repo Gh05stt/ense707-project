@@ -1,3 +1,5 @@
+//KPI Widget for use on the overview dashboard
+
 interface KpiWidgetProps {
   title: string;
   value: number;

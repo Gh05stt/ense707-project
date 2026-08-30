@@ -9,7 +9,6 @@ export const STAFF_NAV_ITEMS: NavItem[] = [
 ];
 
 export const USER_NAV_ITEMS: NavItem[] = [
-  { label: "Overview", path: "/user/dashboard" },
   { label: "My Tickets", path: "/user/tickets" },
   { label: "Create Ticket", path: "/user/tickets/new" },
 ];

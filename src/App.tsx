@@ -7,7 +7,6 @@ import StaffDashboard from "./pages/staff/Dashboard";
 import StaffTicketDetail from "./pages/staff/TicketDetail";
 import StaffTickets from "./pages/staff/Tickets";
 import CreateTicket from "./pages/user/CreateTicket";
-import UserDashboard from "./pages/user/Dashboard";
 import MyTickets from "./pages/user/MyTickets";
 
 function App() {
@@ -44,10 +43,9 @@ function App() {
   //all other cases can go to user view
   return (
     <Routes>
-      <Route path="/user/dashboard" element={<UserDashboard />} />
       <Route path="/user/tickets" element={<MyTickets />} />
       <Route path="/user/tickets/new" element={<CreateTicket />} />
-      <Route path="*" element={<Navigate to="/user/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/user/tickets" replace />} />
     </Routes>
   );
 }

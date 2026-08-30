@@ -47,3 +47,29 @@ The staff dashboard is at `/staff/dashboard`.
 | `pnpm build` | Type-check and create a production build |
 | `pnpm preview` | Serve the production build locally |
 | `pnpm lint` | Run Oxlint |
+| `pnpm test` | Run the automated Vitest test suite once |
+| `pnpm test:watch` | Run Vitest in watch mode while developing |
+| `pnpm test:ui` | Run Vitest with the interactive UI |
+
+## Testing
+
+Automated component/unit tests use **Vitest**, **React Testing Library**,
+`@testing-library/jest-dom`, and `@testing-library/user-event`. They live
+next to the code they test as `*.test.tsx` / `*.test.ts` files (e.g.
+`src/pages/user/CreateTicket.test.tsx`), plus shared helpers in `src/test/`.
+
+Run the whole suite:
+
+```bash
+pnpm test
+```
+
+Run a single file:
+
+```bash
+pnpm test -- src/pages/user/CreateTicket.test.tsx
+```
+
+External dependencies (Supabase-backed services in `src/services/ticketService.ts`
+and the `useAuth` hook) are mocked with `vi.mock` so tests are deterministic and
+don't hit the network. Component logic is never mocked.

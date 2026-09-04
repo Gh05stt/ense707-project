@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -85,6 +85,32 @@ describe("CreateTicket page", () => {
 
     expect(await screen.findByText(/title is required/i)).toBeInTheDocument();
     expect(createTicketMock).not.toHaveBeenCalled();
+  });
+
+  it("TC-FR7-8: priority options are exactly Low, Medium, High and Critical", () => {
+    renderCreateTicket();
+
+    const options = within(screen.getByLabelText(/priority/i))
+      .getAllByRole("option")
+      .filter((option) => (option as HTMLOptionElement).value !== "");
+
+    expect(options.map((option) => option.textContent)).toEqual(["Low", "Medium", "High", "Critical"]);
+    expect(options.map((option) => (option as HTMLOptionElement).value)).toEqual(["low", "medium", "high", "critical"]);
+  });
+
+  it("TC-FR7-9: a ticket can be submitted with Critical priority", async () => {
+    createTicketMock.mockResolvedValue({ ticket_id: 2 } as Ticket);
+    renderCreateTicket();
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/title/i), "Server down");
+    await user.selectOptions(screen.getByLabelText(/category/i), "Network Problem");
+    await user.selectOptions(screen.getByLabelText(/priority/i), "critical");
+    await user.type(screen.getByLabelText(/description/i), "All users affected.");
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    await waitFor(() => expect(createTicketMock).toHaveBeenCalledTimes(1));
+    expect(createTicketMock.mock.calls[0][1].priority).toBe("critical");
   });
 
   it("TC-9 - NFR-1 supporting check: form fields expose accessible labels and controls", () => {

@@ -8,7 +8,7 @@ import { formatDateTime, formatPriority, formatStatus, formatTicketId } from "..
 import type { TicketPriority, TicketStatus } from "../../types/database";
 
 const STATUS_OPTIONS: TicketStatus[] = ["open", "in_progress", "resolved", "closed"];
-const PRIORITY_OPTIONS: TicketPriority[] = ["low", "medium", "high", "urgent"];
+const PRIORITY_OPTIONS: TicketPriority[] = ["low", "medium", "high", "critical"];
 
 const INLINE_SELECT_CLASS =
   "cursor-pointer appearance-none rounded border-none bg-transparent p-0 pr-4 font-medium text-gray-900 underline decoration-dotted underline-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";

@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,16 +9,18 @@ import TicketDetail from "./TicketDetail";
 vi.mock("../../services/ticketService", () => ({
   getTicketById: vi.fn(),
   getResolutionNotes: vi.fn(),
+  updateTicketPriority: vi.fn(),
 }));
 
 vi.mock("../../lib/auth/AuthProvider", () => ({
   useAuth: () => makeAuthValue(makeStaffProfile()),
 }));
 
-import { getResolutionNotes, getTicketById } from "../../services/ticketService";
+import { getResolutionNotes, getTicketById, updateTicketPriority } from "../../services/ticketService";
 
 const getTicketByIdMock = vi.mocked(getTicketById);
 const getResolutionNotesMock = vi.mocked(getResolutionNotes);
+const updateTicketPriorityMock = vi.mocked(updateTicketPriority);
 
 function renderTicketDetail(ticketId: number) {
   return render(
@@ -34,6 +37,34 @@ describe("TicketDetail page", () => {
     getTicketByIdMock.mockReset();
     getResolutionNotesMock.mockReset();
     getResolutionNotesMock.mockResolvedValue([]);
+    updateTicketPriorityMock.mockReset();
+  });
+
+  it("TC-FR7-10: staff priority options are Low, Medium, High and Critical", async () => {
+    getTicketByIdMock.mockResolvedValue(makeTicket({ ticket_id: 60, title: "Priority options", priority: "medium" }));
+
+    renderTicketDetail(60);
+
+    expect(await screen.findByText("Priority options")).toBeInTheDocument();
+    const [prioritySelect] = screen.getAllByRole("combobox");
+    const options = within(prioritySelect).getAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["Low", "Medium", "High", "Critical"]);
+  });
+
+  it("TC-FR7-11: staff can change priority to Critical and the saved value is displayed", async () => {
+    getTicketByIdMock
+      .mockResolvedValueOnce(makeTicket({ ticket_id: 61, title: "Escalate me", priority: "low" }))
+      .mockResolvedValue(makeTicket({ ticket_id: 61, title: "Escalate me", priority: "critical" }));
+    updateTicketPriorityMock.mockResolvedValue();
+
+    renderTicketDetail(61);
+
+    expect(await screen.findByText("Escalate me")).toBeInTheDocument();
+    const [prioritySelect] = screen.getAllByRole("combobox");
+    await userEvent.selectOptions(prioritySelect, "critical");
+
+    expect(updateTicketPriorityMock).toHaveBeenCalledWith(61, "critical");
+    await waitFor(() => expect(screen.getAllByRole("combobox")[0]).toHaveValue("critical"));
   });
 
   it("TC-5 - FR-3: displays the current status of the opened ticket", async () => {

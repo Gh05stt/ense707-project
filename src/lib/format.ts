@@ -11,7 +11,7 @@ const PRIORITY_LABELS: Record<TicketPriority, string> = {
   low: "Low",
   medium: "Medium",
   high: "High",
-  urgent: "Urgent",
+  critical: "Critical",
 };
 
 export function formatStatus(status: TicketStatus): string {

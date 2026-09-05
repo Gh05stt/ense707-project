@@ -1,4 +1,3 @@
--- S-03 regression tests: run with `supabase test db` (pgTAP).
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -14,7 +13,6 @@ insert into public.users (user_id, name, email, role) values
 on conflict (user_id) do nothing;
 
 set local role authenticated;
--- Older auth.uid() builds read request.jwt.claim.sub; current ones read request.jwt.claims.
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
 

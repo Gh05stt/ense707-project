@@ -66,10 +66,6 @@ describe("StaffTickets page", () => {
   });
 
   it("TC-3 - FR-2: renders each ticket with a distinct ticket ID", async () => {
-    /**
-     * Ticket IDs are created by supabase. So that is not directly tested, but this verifies the app properly renders 
-     * and distinguishes different tickets from the sample/mocked backend data.
-     */
     const tickets = [makeTicket({ ticket_id: 201, title: "First ticket" }), makeTicket({ ticket_id: 202, title: "Second ticket" })];
     getAllTicketsMock.mockResolvedValue(tickets);
 

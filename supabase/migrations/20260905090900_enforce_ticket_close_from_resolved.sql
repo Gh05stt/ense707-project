@@ -1,7 +1,3 @@
--- S-02 / FR-10: a ticket may only transition to 'closed' from 'resolved'.
--- The database also owns resolved_at / closed_at so they always reflect the
--- current lifecycle state; client-supplied values for these columns are ignored.
-
 create or replace function public.enforce_ticket_status_transition()
 returns trigger
 language plpgsql

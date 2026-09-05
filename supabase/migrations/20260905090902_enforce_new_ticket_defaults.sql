@@ -1,7 +1,3 @@
--- S-03: new tickets always start in a clean 'open' state owned by the caller.
--- Lifecycle timestamps are owned by the database, so client-supplied values
--- for them are ignored rather than rejected.
-
 create or replace function public.enforce_new_ticket_defaults()
 returns trigger
 language plpgsql

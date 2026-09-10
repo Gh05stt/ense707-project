@@ -13,7 +13,8 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 ];
 
 function MyTickets() {
-  const { tickets, isLoading, searchTerm, statusFilter, setSearchTerm, setStatusFilter } = useMyTicketsController();
+  const { tickets, hasTickets, isLoading, searchTerm, statusFilter, setSearchTerm, setStatusFilter } =
+    useMyTicketsController();
 
   return (
     <div className="flex h-screen w-screen bg-gray-50">
@@ -59,7 +60,7 @@ function MyTickets() {
                 {!isLoading && tickets.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
-                      You haven't submitted any tickets yet.
+                      {hasTickets ? "No tickets match your search." : "You haven't submitted any tickets yet."}
                     </td>
                   </tr>
                 )}

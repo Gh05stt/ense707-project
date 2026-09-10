@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getAllTickets } from "../../services/ticketService";
-import type { Ticket, TicketStatus } from "../../types/database";
+import { filterTickets, type StatusFilter } from "../ticketFilters";
+import type { Ticket } from "../../types/database";
 
-export type StatusFilter = TicketStatus | "all";
+export type { StatusFilter };
 
 export interface StaffTicketsController {
   tickets: Ticket[];
@@ -27,16 +28,10 @@ export function useStaffTicketsController(): StaffTicketsController {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const tickets = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-
-    return allTickets.filter((ticket) => {
-      const matchesSearch =
-        !term || ticket.title.toLowerCase().includes(term) || String(ticket.ticket_id).includes(term);
-      const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [allTickets, searchTerm, statusFilter]);
+  const tickets = useMemo(
+    () => filterTickets(allTickets, searchTerm, statusFilter),
+    [allTickets, searchTerm, statusFilter],
+  );
 
   return { tickets, isLoading, searchTerm, statusFilter, setSearchTerm, setStatusFilter };
 }

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../auth/AuthProvider";
 import { getMyTickets } from "../../services/ticketService";
-import type { Ticket, TicketStatus } from "../../types/database";
+import { filterTickets, type StatusFilter } from "../ticketFilters";
+import type { Ticket } from "../../types/database";
 
-export type StatusFilter = TicketStatus | "all";
+export type { StatusFilter };
 
 export interface MyTicketsController {
   tickets: Ticket[];
+  hasTickets: boolean;
   isLoading: boolean;
   searchTerm: string;
   statusFilter: StatusFilter;
@@ -34,16 +36,18 @@ export function useMyTicketsController(): MyTicketsController {
       .finally(() => setIsLoading(false));
   }, [user]);
 
-  const tickets = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+  const tickets = useMemo(
+    () => filterTickets(allTickets, searchTerm, statusFilter),
+    [allTickets, searchTerm, statusFilter],
+  );
 
-    return allTickets.filter((ticket) => {
-      const matchesSearch =
-        !term || ticket.title.toLowerCase().includes(term) || String(ticket.ticket_id).includes(term);
-      const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [allTickets, searchTerm, statusFilter]);
-
-  return { tickets, isLoading, searchTerm, statusFilter, setSearchTerm, setStatusFilter };
+  return {
+    tickets,
+    hasTickets: allTickets.length > 0,
+    isLoading,
+    searchTerm,
+    statusFilter,
+    setSearchTerm,
+    setStatusFilter,
+  };
 }

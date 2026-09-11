@@ -11,6 +11,7 @@ export interface MyTicketsController {
   tickets: Ticket[];
   hasTickets: boolean;
   isLoading: boolean;
+  loadError: string | null;
   searchTerm: string;
   statusFilter: StatusFilter;
   setSearchTerm: (value: string) => void;
@@ -21,6 +22,7 @@ export function useMyTicketsController(): MyTicketsController {
   const { user } = useAuth();
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
@@ -32,7 +34,7 @@ export function useMyTicketsController(): MyTicketsController {
 
     getMyTickets(user.id)
       .then(setAllTickets)
-      .catch(() => setAllTickets([]))
+      .catch(() => setLoadError("Failed to load your tickets. Please refresh the page to try again."))
       .finally(() => setIsLoading(false));
   }, [user]);
 
@@ -45,6 +47,7 @@ export function useMyTicketsController(): MyTicketsController {
     tickets,
     hasTickets: allTickets.length > 0,
     isLoading,
+    loadError,
     searchTerm,
     statusFilter,
     setSearchTerm,

@@ -23,9 +23,11 @@ function TicketDetail() {
     isLoading,
     loadError,
     isUpdating,
+    updateError,
     canClose,
     noteText,
     isAddingNote,
+    noteError,
     setNoteText,
     handleStatusChange,
     handlePriorityChange,
@@ -88,6 +90,11 @@ function TicketDetail() {
                 {!canClose && (
                   <p className="mt-1 text-xs text-gray-500">A ticket must be Resolved before it can be Closed.</p>
                 )}
+                {updateError && (
+                  <p role="alert" className="mt-1 text-sm text-red-600">
+                    {updateError}
+                  </p>
+                )}
 
                 <h1 className="mt-2 text-xl text-gray-900">{ticket.title}</h1>
 
@@ -126,6 +133,11 @@ function TicketDetail() {
                     rows={3}
                     className="rounded-md border border-gray-400 px-3 py-2 focus:border-gray-600 focus:outline-none"
                   />
+                  {noteError && (
+                    <p role="alert" className="text-sm text-red-600">
+                      {noteError}
+                    </p>
+                  )}
                   <div className="flex justify-end">
                     <button
                       type="submit"

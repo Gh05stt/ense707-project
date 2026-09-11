@@ -80,6 +80,14 @@ describe("StaffTickets page", () => {
     expect(firstLink.getAttribute("href")).not.toEqual(secondLink.getAttribute("href"));
   });
 
+  it("TC-ERR-02: a failed ticket fetch shows an error instead of an empty ticket list", async () => {
+    getAllTicketsMock.mockRejectedValue(new Error("network down"));
+    renderStaffTickets();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/failed to load tickets/i);
+    expect(screen.queryByText(/no tickets/i)).not.toBeInTheDocument();
+  });
+
   describe("search and filter (FR-6)", () => {
     beforeEach(() => {
       getAllTicketsMock.mockResolvedValue([

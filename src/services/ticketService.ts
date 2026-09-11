@@ -53,18 +53,29 @@ export async function getTicketById(ticketId: number): Promise<Ticket> {
   return data as Ticket;
 }
 
+async function updateTicket(ticketId: number, updates: Record<string, unknown>): Promise<void> {
+  const { data, error } = await supabase
+    .from("tickets")
+    .update(updates)
+    .eq("ticket_id", ticketId)
+    .select("ticket_id");
+
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error(`Ticket ${ticketId} was not updated. It may not exist or you may not have permission to change it.`);
+  }
+}
+
 export async function updateTicketStatus(ticketId: number, status: TicketStatus): Promise<void> {
   const updates: Record<string, unknown> = { status };
   if (status === "resolved") updates.resolved_at = new Date().toISOString();
   if (status === "closed") updates.closed_at = new Date().toISOString();
 
-  const { error } = await supabase.from("tickets").update(updates).eq("ticket_id", ticketId);
-  if (error) throw error;
+  await updateTicket(ticketId, updates);
 }
 
 export async function updateTicketPriority(ticketId: number, priority: TicketPriority): Promise<void> {
-  const { error } = await supabase.from("tickets").update({ priority }).eq("ticket_id", ticketId);
-  if (error) throw error;
+  await updateTicket(ticketId, { priority });
 }
 
 export async function getResolutionNotes(ticketId: number): Promise<ResolutionNote[]> {

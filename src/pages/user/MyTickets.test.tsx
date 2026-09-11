@@ -85,4 +85,12 @@ describe("MyTickets page (FR-3 / FR-5)", () => {
 
     expect(await screen.findByText("You haven't submitted any tickets yet.")).toBeInTheDocument();
   });
+
+  it("TC-ERR-01: a failed ticket fetch shows an error instead of an empty ticket history", async () => {
+    getMyTicketsMock.mockRejectedValue(new Error("network down"));
+    renderMyTickets();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/failed to load your tickets/i);
+    expect(screen.queryByText(/haven't submitted any tickets/i)).not.toBeInTheDocument();
+  });
 });

@@ -13,7 +13,7 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 ];
 
 function MyTickets() {
-  const { tickets, hasTickets, isLoading, searchTerm, statusFilter, setSearchTerm, setStatusFilter } =
+  const { tickets, hasTickets, isLoading, loadError, searchTerm, statusFilter, setSearchTerm, setStatusFilter } =
     useMyTicketsController();
 
   return (
@@ -45,6 +45,12 @@ function MyTickets() {
             </select>
           </div>
 
+          {loadError && (
+            <p role="alert" className="mb-4 text-sm text-red-600">
+              {loadError}
+            </p>
+          )}
+
           <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-gray-300 bg-gray-50">
@@ -57,7 +63,7 @@ function MyTickets() {
                 </tr>
               </thead>
               <tbody>
-                {!isLoading && tickets.length === 0 && (
+                {!isLoading && !loadError && tickets.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                       {hasTickets ? "No tickets match your search." : "You haven't submitted any tickets yet."}

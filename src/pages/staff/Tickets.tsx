@@ -15,7 +15,8 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 ];
 
 function StaffTickets() {
-  const { tickets, isLoading, searchTerm, statusFilter, setSearchTerm, setStatusFilter } = useStaffTicketsController();
+  const { tickets, isLoading, loadError, searchTerm, statusFilter, setSearchTerm, setStatusFilter } =
+    useStaffTicketsController();
 
   return (
     <div className="flex h-screen w-screen bg-gray-50">
@@ -46,6 +47,12 @@ function StaffTickets() {
             </select>
           </div>
 
+          {loadError && (
+            <p role="alert" className="mb-4 text-sm text-red-600">
+              {loadError}
+            </p>
+          )}
+
           <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-gray-300 bg-gray-50">
@@ -59,7 +66,7 @@ function StaffTickets() {
                 </tr>
               </thead>
               <tbody>
-                {!isLoading && tickets.length === 0 && (
+                {!isLoading && !loadError && tickets.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
                       No tickets match your search.

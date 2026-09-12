@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../../services/ticketService", () => ({
+  getAllTickets: vi.fn(),
+}));
 
 import { makeTicket } from "../../test/fixtures";
 import { calculateDashboardKpis } from "./staffDashboard";

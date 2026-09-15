@@ -1,18 +1,22 @@
 import { supabase } from "../lib/supabaseClient";
+import { TicketValidationError, validateCreateTicketInput } from "../lib/ticketValidation";
 import type { CreateTicketInput, ResolutionNote, Ticket, TicketPriority, TicketStatus } from "../types/database";
 
 const TICKET_WITH_REQUESTER_SELECT = "*, users ( user_id, name, email )";
 const NOTE_WITH_AUTHOR_SELECT = "*, users ( user_id, name, email )";
 
 export async function createTicket(userId: string, input: CreateTicketInput): Promise<Ticket> {
+  const fieldErrors = validateCreateTicketInput(input);
+  if (Object.keys(fieldErrors).length > 0) throw new TicketValidationError(fieldErrors);
+
   const { data, error } = await supabase
     .from("tickets")
     .insert({
       user_id: userId,
-      title: input.title,
-      description: input.description,
+      title: input.title.trim(),
+      description: input.description.trim(),
       category: input.category,
-      priority: input.priority || "medium",
+      priority: input.priority,
     })
     .select(TICKET_WITH_REQUESTER_SELECT)
     .single();

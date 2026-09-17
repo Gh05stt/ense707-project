@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:integration:live": "vitest run --config vitest.integration.config.ts --mode integration",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },

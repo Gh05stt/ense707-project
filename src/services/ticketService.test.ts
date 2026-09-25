@@ -6,7 +6,17 @@ vi.mock("../lib/supabaseClient", () => ({
 
 import { supabase } from "../lib/supabaseClient";
 import { TicketValidationError } from "../lib/ticketValidation";
-import { createTicket, updateTicketPriority, updateTicketStatus } from "./ticketService";
+import {
+  addResolutionNote,
+  createTicket,
+  getAllTickets,
+  getMyTickets,
+  getResolutionNotes,
+  getTicketById,
+  updateTicketPriority,
+  updateTicketStatus,
+} from "./ticketService";
+import { makeResolutionNote, makeTicket } from "../test/fixtures";
 
 const fromMock = vi.mocked(supabase.from);
 const insertMock = vi.fn();
@@ -149,5 +159,147 @@ describe("ticketService ticket updates (zero-row detection)", () => {
     await updateTicketPriority(5, "critical");
 
     expect(updateMock).toHaveBeenCalledWith({ priority: "critical" });
+  });
+});
+
+type QueryMethod = "select" | "eq" | "order" | "single" | "insert";
+type MockQuery = Promise<{ data: unknown; error: unknown }> & Record<QueryMethod, ReturnType<typeof vi.fn>>;
+
+function mockQuery(result: { data: unknown; error: unknown }): MockQuery {
+  const query = Promise.resolve(result) as MockQuery;
+  for (const method of ["select", "eq", "order", "single", "insert"] as const) {
+    query[method] = vi.fn(() => query);
+  }
+  fromMock.mockReturnValue(query as unknown as ReturnType<typeof supabase.from>);
+  return query;
+}
+
+const REQUESTER_SELECT = "*, users ( user_id, name, email )";
+const RLS_ERROR = { code: "42501", message: "permission denied for table tickets" };
+
+describe("ticketService read and note queries (mocked Supabase, not RLS verification)", () => {
+  beforeEach(() => {
+    fromMock.mockReset();
+  });
+
+  describe("getMyTickets", () => {
+    it("TC-SVC-01: filters by the given user and returns newest tickets first", async () => {
+      const tickets = [makeTicket({ ticket_id: 2 }), makeTicket({ ticket_id: 1 })];
+      const query = mockQuery({ data: tickets, error: null });
+
+      await expect(getMyTickets("user-1")).resolves.toBe(tickets);
+
+      expect(fromMock).toHaveBeenCalledWith("tickets");
+      expect(query.select).toHaveBeenCalledWith("*");
+      expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(query.order).toHaveBeenCalledWith("created_at", { ascending: false });
+    });
+
+    it("TC-SVC-02: returns an empty list when the user has no tickets", async () => {
+      mockQuery({ data: [], error: null });
+
+      await expect(getMyTickets("user-1")).resolves.toEqual([]);
+    });
+
+    it("TC-SVC-03: propagates query errors instead of returning an empty list", async () => {
+      mockQuery({ data: null, error: RLS_ERROR });
+
+      await expect(getMyTickets("user-1")).rejects.toBe(RLS_ERROR);
+    });
+  });
+
+  describe("getAllTickets", () => {
+    it("TC-SVC-04: selects every ticket with its requester, newest first, without a user filter", async () => {
+      const tickets = [makeTicket({ ticket_id: 1 })];
+      const query = mockQuery({ data: tickets, error: null });
+
+      await expect(getAllTickets()).resolves.toBe(tickets);
+
+      expect(fromMock).toHaveBeenCalledWith("tickets");
+      expect(query.select).toHaveBeenCalledWith(REQUESTER_SELECT);
+      expect(query.order).toHaveBeenCalledWith("created_at", { ascending: false });
+      expect(query.eq).not.toHaveBeenCalled();
+    });
+
+    it("TC-SVC-05: returns an empty list when there are no tickets", async () => {
+      mockQuery({ data: [], error: null });
+
+      await expect(getAllTickets()).resolves.toEqual([]);
+    });
+
+    it("TC-SVC-06: propagates query errors", async () => {
+      mockQuery({ data: null, error: RLS_ERROR });
+
+      await expect(getAllTickets()).rejects.toBe(RLS_ERROR);
+    });
+  });
+
+  describe("getTicketById", () => {
+    it("TC-SVC-07: requests exactly one ticket by ID with its requester", async () => {
+      const ticket = makeTicket({ ticket_id: 42 });
+      const query = mockQuery({ data: ticket, error: null });
+
+      await expect(getTicketById(42)).resolves.toBe(ticket);
+
+      expect(fromMock).toHaveBeenCalledWith("tickets");
+      expect(query.select).toHaveBeenCalledWith(REQUESTER_SELECT);
+      expect(query.eq).toHaveBeenCalledWith("ticket_id", 42);
+      expect(query.single).toHaveBeenCalledTimes(1);
+    });
+
+    it("TC-SVC-08: a missing or hidden ticket rejects with the not-found error", async () => {
+      const notFound = { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" };
+      mockQuery({ data: null, error: notFound });
+
+      await expect(getTicketById(999)).rejects.toBe(notFound);
+    });
+  });
+
+  describe("getResolutionNotes", () => {
+    it("TC-SVC-09: filters notes by ticket and returns them oldest first with their authors", async () => {
+      const notes = [makeResolutionNote({ ticket_id: 42 })];
+      const query = mockQuery({ data: notes, error: null });
+
+      await expect(getResolutionNotes(42)).resolves.toBe(notes);
+
+      expect(fromMock).toHaveBeenCalledWith("resolution_notes");
+      expect(query.select).toHaveBeenCalledWith(REQUESTER_SELECT);
+      expect(query.eq).toHaveBeenCalledWith("ticket_id", 42);
+      expect(query.order).toHaveBeenCalledWith("created_at", { ascending: true });
+    });
+
+    it("TC-SVC-10: returns an empty list for a ticket without notes", async () => {
+      mockQuery({ data: [], error: null });
+
+      await expect(getResolutionNotes(42)).resolves.toEqual([]);
+    });
+
+    it("TC-SVC-11: propagates query errors", async () => {
+      mockQuery({ data: null, error: RLS_ERROR });
+
+      await expect(getResolutionNotes(42)).rejects.toBe(RLS_ERROR);
+    });
+  });
+
+  describe("addResolutionNote", () => {
+    it("TC-SVC-12: inserts the note for the ticket and staff author", async () => {
+      const query = mockQuery({ data: null, error: null });
+
+      await expect(addResolutionNote(42, "staff-1", "Replaced the cable")).resolves.toBeUndefined();
+
+      expect(fromMock).toHaveBeenCalledWith("resolution_notes");
+      expect(query.insert).toHaveBeenCalledWith({
+        ticket_id: 42,
+        staff_user_id: "staff-1",
+        note_text: "Replaced the cable",
+      });
+    });
+
+    it("TC-SVC-13: propagates insert errors such as an RLS rejection", async () => {
+      const insertDenied = { code: "42501", message: 'new row violates row-level security policy for table "resolution_notes"' };
+      mockQuery({ data: null, error: insertDenied });
+
+      await expect(addResolutionNote(42, "user-1", "Not staff")).rejects.toBe(insertDenied);
+    });
   });
 });

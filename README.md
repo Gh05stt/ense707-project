@@ -73,3 +73,4 @@ pnpm test -- src/pages/user/CreateTicket.test.tsx
 External dependencies (Supabase-backed services in `src/services/ticketService.ts`
 and the `useAuth` hook) are mocked with `vi.mock` so tests are deterministic and
 don't hit the network. Component logic is never mocked.
+ 

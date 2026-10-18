@@ -1,8 +1,6 @@
-//KPI Widget for use on the overview dashboard
-
 interface KpiWidgetProps {
   title: string;
-  value: number;
+  value: number | string;
 }
 
 function KpiWidget({ title, value }: KpiWidgetProps) {

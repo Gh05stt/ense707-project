@@ -16,9 +16,11 @@ export interface StaffTicketDetailController {
   isLoading: boolean;
   loadError: string | null;
   isUpdating: boolean;
+  updateError: string | null;
   canClose: boolean;
   noteText: string;
   isAddingNote: boolean;
+  noteError: string | null;
   setNoteText: (value: string) => void;
   handleStatusChange: (status: TicketStatus) => Promise<void>;
   handlePriorityChange: (priority: TicketPriority) => Promise<void>;
@@ -32,8 +34,10 @@ export function useStaffTicketDetailController(ticketId: number): StaffTicketDet
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
 
   const loadTicket = useCallback(async () => {
     try {
@@ -59,9 +63,12 @@ export function useStaffTicketDetailController(ticketId: number): StaffTicketDet
     if (status === "closed" && !canClose) return;
 
     setIsUpdating(true);
+    setUpdateError(null);
     try {
       await updateTicketStatus(ticketId, status);
       await loadTicket();
+    } catch {
+      setUpdateError("Failed to update the ticket status. The change was not saved.");
     } finally {
       setIsUpdating(false);
     }
@@ -69,9 +76,12 @@ export function useStaffTicketDetailController(ticketId: number): StaffTicketDet
 
   async function handlePriorityChange(priority: TicketPriority) {
     setIsUpdating(true);
+    setUpdateError(null);
     try {
       await updateTicketPriority(ticketId, priority);
       await loadTicket();
+    } catch {
+      setUpdateError("Failed to update the ticket priority. The change was not saved.");
     } finally {
       setIsUpdating(false);
     }
@@ -82,10 +92,13 @@ export function useStaffTicketDetailController(ticketId: number): StaffTicketDet
     if (!noteText.trim() || !user) return;
 
     setIsAddingNote(true);
+    setNoteError(null);
     try {
       await addResolutionNote(ticketId, user.id, noteText.trim());
       setNoteText("");
       await loadTicket();
+    } catch {
+      setNoteError("Failed to save the note. Please try again.");
     } finally {
       setIsAddingNote(false);
     }
@@ -97,9 +110,11 @@ export function useStaffTicketDetailController(ticketId: number): StaffTicketDet
     isLoading,
     loadError,
     isUpdating,
+    updateError,
     canClose,
     noteText,
     isAddingNote,
+    noteError,
     setNoteText,
     handleStatusChange,
     handlePriorityChange,

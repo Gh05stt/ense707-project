@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage
+integration/results
 *.local
 
 # Editor directories and files
@@ -24,3 +26,4 @@ dist-ssr
 *.sw?
 
 .env
+supabase/.temp/

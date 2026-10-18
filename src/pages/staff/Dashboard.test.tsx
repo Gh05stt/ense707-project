@@ -17,6 +17,15 @@ import { getAllTickets } from "../../services/ticketService";
 
 const getAllTicketsMock = vi.mocked(getAllTickets);
 
+const KPI_TITLES = [
+  "Open Tickets",
+  "In Progress Tickets",
+  "Resolved Tickets",
+  "Closed Tickets",
+  "Overdue Tickets (> 48 hrs)",
+  "Avg. Resolution Time (hrs)",
+];
+
 function renderDashboard() {
   return render(
     <MemoryRouter>
@@ -37,8 +46,7 @@ describe("StaffDashboard page", () => {
     getAllTicketsMock.mockReset();
   });
 
-  it("TC-6 - FR-11: KPI values match expected values calculated from sample ticket data", async () => {
-    // Expected values were calculated by hand.
+  it("TC-6 - FR-11: displays all six required KPIs calculated from sample ticket data", async () => {
     const now = Date.now();
     const hoursAgo = (hours: number) => new Date(now - hours * 60 * 60 * 1000).toISOString();
 
@@ -59,27 +67,60 @@ describe("StaffDashboard page", () => {
         closed_at: "2026-01-02T00:00:00.000Z",
       }),
       makeTicket({ ticket_id: 5, status: "open", created_at: hoursAgo(1) }),
+      makeTicket({
+        ticket_id: 6,
+        status: "open",
+        created_at: hoursAgo(2),
+        resolved_at: hoursAgo(1),
+      }),
     ];
     getAllTicketsMock.mockResolvedValue(tickets);
 
     renderDashboard();
 
-    expect(await screen.findByText("Total Number of Tickets")).toBeInTheDocument();
-
-    expect(findKpiValue("Total Number of Tickets")).toBe("5");
-    expect(findKpiValue("Open Tickets")).toBe("2");
+    expect(await screen.findByText("Open Tickets")).toBeInTheDocument();
+    expect(findKpiValue("Open Tickets")).toBe("3");
     expect(findKpiValue("In Progress Tickets")).toBe("1");
-    expect(findKpiValue("Overdue Tickets")).toBe("1");
-    expect(findKpiValue("Avg. Time to Close (hrs)")).toBe("15");
+    expect(findKpiValue("Resolved Tickets")).toBe("1");
+    expect(findKpiValue("Closed Tickets")).toBe("1");
+    expect(findKpiValue("Overdue Tickets (> 48 hrs)")).toBe("1");
+    expect(findKpiValue("Avg. Resolution Time (hrs)")).toBe("15");
+    expect(findKpiValue("Total Number of Tickets")).toBe("6");
   });
 
-  it("TC-6 - FR-11: shows zeroed KPIs when there are no tickets", async () => {
+  it("TC-6 - FR-11: shows zero counts and N/A average when there are no tickets", async () => {
     getAllTicketsMock.mockResolvedValue([]);
 
     renderDashboard();
 
-    expect(await screen.findByText("Total Number of Tickets")).toBeInTheDocument();
-    expect(findKpiValue("Total Number of Tickets")).toBe("0");
-    expect(findKpiValue("Avg. Time to Close (hrs)")).toBe("0");
+    expect(await screen.findByText("Open Tickets")).toBeInTheDocument();
+    for (const title of KPI_TITLES.filter((t) => t !== "Avg. Resolution Time (hrs)")) {
+      expect(findKpiValue(title)).toBe("0");
+    }
+    expect(findKpiValue("Avg. Resolution Time (hrs)")).toBe("N/A");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("TC-FR11-8: shows a loading message instead of zero values while tickets load", () => {
+    getAllTicketsMock.mockReturnValue(new Promise(() => {}));
+
+    renderDashboard();
+
+    expect(screen.getByText(/loading dashboard/i)).toBeInTheDocument();
+    for (const title of KPI_TITLES) {
+      expect(screen.queryByText(title)).not.toBeInTheDocument();
+    }
+  });
+
+  it("TC-FR11-9: shows an error instead of zero values when tickets fail to load", async () => {
+    getAllTicketsMock.mockRejectedValue(new Error("permission denied"));
+
+    renderDashboard();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/failed to load dashboard data/i);
+    expect(screen.queryByText(/loading dashboard/i)).not.toBeInTheDocument();
+    for (const title of KPI_TITLES) {
+      expect(screen.queryByText(title)).not.toBeInTheDocument();
+    }
   });
 });

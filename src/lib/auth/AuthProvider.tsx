@@ -33,17 +33,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    let currentUserId: string | null | undefined;
+    let latestRequest = 0;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    async function applySession(newSession: Session | null) {
       if (!isMounted) return;
-      setSession(data.session);
-      setProfile(data.session?.user ? await fetchProfile(data.session.user.id) : null);
-      setIsLoading(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
-      setProfile(newSession?.user ? await fetchProfile(newSession.user.id) : null);
+
+      const userId = newSession?.user.id ?? null;
+      if (userId === currentUserId) return;
+      currentUserId = userId;
+      const request = ++latestRequest;
+
+      setProfile(null);
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      const nextProfile = await fetchProfile(userId).catch(() => null);
+      // a newer session may have replaced this one while the profile was loading
+      if (!isMounted || request !== latestRequest) return;
+      setProfile(nextProfile);
+      setIsLoading(false);
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data.session))
+      .catch(() => {
+        if (currentUserId === undefined) void applySession(null);
+      });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+
+      setTimeout(() => void applySession(newSession), 0);
     });
 
     return () => {

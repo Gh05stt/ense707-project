@@ -3,21 +3,17 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
 import { createTicket } from "../../services/ticketService";
+import { type CreateTicketFormErrors, TicketValidationError, validateCreateTicketInput } from "../ticketValidation";
 import type { CreateTicketInput, TicketPriority } from "../../types/database";
 
-export const CATEGORY_OPTIONS: string[] = [
-  "Login Issue",
-  "Software Error",
-  "Network Problem",
-  "Access Request",
-  "Other",
-];
+export { CATEGORY_OPTIONS } from "../ticketValidation";
+export type { CreateTicketFormErrors };
 
 export const PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
+  { value: "critical", label: "Critical" },
 ];
 
 const EMPTY_FORM: CreateTicketInput = {
@@ -26,18 +22,6 @@ const EMPTY_FORM: CreateTicketInput = {
   priority: "",
   description: "",
 };
-
-export type CreateTicketFormErrors = Partial<Record<keyof CreateTicketInput, string>>;
-
-// tickets can only be submitted if all fields are filled. If not, it raises an error for each field.
-function validate(values: CreateTicketInput): CreateTicketFormErrors {
-  const errors: CreateTicketFormErrors = {};
-  if (!values.title.trim()) errors.title = "Title is required.";
-  if (!values.category) errors.category = "Category is required.";
-  if (!values.priority) errors.priority = "Priority is required.";
-  if (!values.description.trim()) errors.description = "Description is required.";
-  return errors;
-}
 
 export interface CreateTicketController {
   form: CreateTicketInput;
@@ -81,7 +65,8 @@ export function useCreateTicketController(): CreateTicketController {
     event.preventDefault();
     setSubmitError(null);
 
-    const validationErrors = validate(form);
+    // tickets can only be submitted if all fields are valid. if not each field gets an error
+    const validationErrors = validateCreateTicketInput(form);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -95,7 +80,11 @@ export function useCreateTicketController(): CreateTicketController {
       await createTicket(user.id, form);
       setForm(EMPTY_FORM);
       navigate("/user/tickets");
-    } catch {
+    } catch (error) {
+      if (error instanceof TicketValidationError) {
+        setErrors(error.fieldErrors);
+        return;
+      }
       setSubmitError("Something went wrong while submitting your ticket. Please try again.");
     } finally {
       setIsSubmitting(false);

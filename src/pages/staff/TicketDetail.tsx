@@ -8,7 +8,7 @@ import { formatDateTime, formatPriority, formatStatus, formatTicketId } from "..
 import type { TicketPriority, TicketStatus } from "../../types/database";
 
 const STATUS_OPTIONS: TicketStatus[] = ["open", "in_progress", "resolved", "closed"];
-const PRIORITY_OPTIONS: TicketPriority[] = ["low", "medium", "high", "urgent"];
+const PRIORITY_OPTIONS: TicketPriority[] = ["low", "medium", "high", "critical"];
 
 const INLINE_SELECT_CLASS =
   "cursor-pointer appearance-none rounded border-none bg-transparent p-0 pr-4 font-medium text-gray-900 underline decoration-dotted underline-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
@@ -23,9 +23,11 @@ function TicketDetail() {
     isLoading,
     loadError,
     isUpdating,
+    updateError,
     canClose,
     noteText,
     isAddingNote,
+    noteError,
     setNoteText,
     handleStatusChange,
     handlePriorityChange,
@@ -88,6 +90,11 @@ function TicketDetail() {
                 {!canClose && (
                   <p className="mt-1 text-xs text-gray-500">A ticket must be Resolved before it can be Closed.</p>
                 )}
+                {updateError && (
+                  <p role="alert" className="mt-1 text-sm text-red-600">
+                    {updateError}
+                  </p>
+                )}
 
                 <h1 className="mt-2 text-xl text-gray-900">{ticket.title}</h1>
 
@@ -126,6 +133,11 @@ function TicketDetail() {
                     rows={3}
                     className="rounded-md border border-gray-400 px-3 py-2 focus:border-gray-600 focus:outline-none"
                   />
+                  {noteError && (
+                    <p role="alert" className="text-sm text-red-600">
+                      {noteError}
+                    </p>
+                  )}
                   <div className="flex justify-end">
                     <button
                       type="submit"

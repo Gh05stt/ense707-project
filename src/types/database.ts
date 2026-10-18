@@ -7,7 +7,7 @@ export interface Profile {
   role: UserRole;
 }
 
-export type TicketPriority = "low" | "medium" | "high" | "urgent";
+export type TicketPriority = "low" | "medium" | "high" | "critical";
 
 export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
 
